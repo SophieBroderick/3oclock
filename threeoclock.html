@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <title>3 o'clock</title>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <link href="favicon.ico" rel="shortcut icon" type="image/bmp" />
+  <style>
+    #notused { background:url('') top center no-repeat; }
+    #main { height:604px; width:766px; background-size: contain; display:none; }
+	#item1 { top:266px; height:32px; width:28px; background-size: contain; display:none; z-index:10;}
+	#item2 { top:266px; height:32px; width:28px; background-size: contain; display:none; z-index:10;}
+	#item3 { top:266px; height:32px; width:28px; background-size: contain; display:none; z-index:10;}
+	#inventory { top:766px; height:89px; width:766px; background-size: contain; display:none;}
+    #copyright { position:fixed; bottom:5px; left:5px; font-family:calibri,arial,helvetica,sans-serif; color:#888; }
+	.tool { cursor:pointer; position:fixed; left:0; }
+  </style>
+</head>
+
+<body>
+	<img id="main" src="" />
+	<img id="inventory" class="inventory" src="images/inventory.png" />
+	<img id="item1" src="" /><img id="item2" src="" /><img id="item3" src="" />
+    <div id="copyright">
+      ©2017 Sophie Broderick [mind-circus.org]
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script>
+    var accomplishment = {};
+	var day = 1;
+	var currentRoom = '';
+	var gameover = false;
+	
+    var rooms = { 
+		'start' :	    {'': { image:'start', spots:[ { x1 : 300, x2 : 400, y1 : 480, y2 : 540, target : 'intro' } ]}},
+		'intro' :	    {'': { image:'textbox2', spots:[ 
+							{ x1 : 527, x2 : 593, y1 : 544, y2 : 577, target : 'tutorial_one' }, // Start
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_hint' }, // Skip
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						    ]}
+						},
+		'cabinet_hint' : {'': { image:'textbox5', spots:[ 
+							{ x1 :   28, x2 :  84, y1 : 202, y2 : 295, target : 'uncle' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]} },
+		'cabinet_one' : {'DAY1': { image:'textbox7', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_two' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY2': { image:'textbox9', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_two' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY3': { image:'textbox13', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_two' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY4': { image:'textbox15', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_two' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY5': { image:'textbox17', spots:[ 
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}
+						},
+		'cabinet_two' : {'DAY1': { image:'textbox8', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_one' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY2': { image:'textbox10', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_three' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY3': { image:'textbox14', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_one' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}, 
+						'DAY4': { image:'textbox16', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_one' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}
+						},
+		'cabinet_three' : { 
+						'DAY2': { image:'textbox11', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_four' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}
+						},
+		'cabinet_four' : { 
+						'DAY2': { image:'textbox12', spots:[ 
+							{ x1 : 605, x2 : 658, y1 : 544, y2 : 577, target : 'cabinet_one' },
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}
+						},
+		'tutorial_one' : {'': { image:'textbox3', spots:[ 
+							{ x1 : 30, x2 : 650, y1 : 400, y2 : 600, target : 'tutorial_two' }, // Next
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}},
+		'tutorial_two' : {'': { image:'textbox4', spots:[ 
+							{ x1 : 30, x2 : 650, y1 : 400, y2 : 600, target : 'cabinet_hint' }, // Next
+							{ x1 : 675, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}},
+		'uncle' : {'': { image:'textbox6', spots:[ 
+							{ x1 : 605, x2 : 732, y1 : 544, y2 : 577, target : 'nathans_room' } // Exit
+						]}},
+		'nathans_room' : {'': {image:'nathansleepingcabinet1', spots: [ 
+							     { x1 :   0, x2 :  40, y1 : 400, y2 : 480, target : 'dining_room' },
+								 { x1 :   28, x2 :  84, y1 : 202, y2 : 295, hint : true } 
+							  ] }
+							},
+		'dining_room' : {'': {image:'dining_room', spots:[ 
+							  { x1 : 700, x2 : 800, y1 : 410, y2 : 510, target : 'nathans_room' },
+							  { x1 : 627, x2 : 681, y1 : 140, y2 : 448, target : 'aarons_room' },
+							  { x1 : 536, x2 : 581, y1 : 86,  y2 : 380, target : 'ellys_room' },
+							  { x1 :   1, x2 :  50, y1 : 132, y2 : 427, target : 'hallway' }
+							]
+						},
+						'DAY1': {image:'eatingaalive', spots:[ 
+						  { x1 : 700, x2 : 800, y1 : 410, y2 : 510, target : 'nathans_room' },
+						  { x1 : 627, x2 : 681, y1 : 140, y2 : 448, target : 'aarons_room' },
+						  { x1 : 536, x2 : 581, y1 : 86,  y2 : 380, target : 'ellys_room' },
+						  { x1 :   1, x2 :  50, y1 : 132, y2 : 427, target : 'hallway' },
+						  { x1 : 229, x2 : 281, y1 : 511, y2 : 542, day: 1, withItem : 'nails', accomplishment : 'NAILFOOD', nextAccomplishment : 'NAILDEAD' }
+						]},
+						'DAY1/NAILFOOD': {image:'eatingaalive2', spots:[ 
+						  { x1 : 700, x2 : 800, y1 : 410, y2 : 510, target : 'nathans_room' },
+						  { x1 : 627, x2 : 681, y1 : 140, y2 : 448, target : 'aarons_room' },
+						  { x1 : 536, x2 : 581, y1 : 86,  y2 : 380, target : 'ellys_room' },
+						  { x1 :   1, x2 :  50, y1 : 132, y2 : 427, target : 'hallway' }
+						]},
+						'DAY1/NAILDEAD': {image:'eatingadead', spots:[ 
+						  { x1 : 700, x2 : 800, y1 : 410, y2 : 510, target : 'nathans_room' },
+						  { x1 : 627, x2 : 681, y1 : 140, y2 : 448, target : 'aarons_room' },
+						  { x1 : 536, x2 : 581, y1 : 86,  y2 : 380, target : 'ellys_room' },
+						  { x1 :   1, x2 :  50, y1 : 132, y2 : 427, target : 'hallway' }
+						]}
+						},
+		'aarons_room' : {'': {image:'aarons_room', spots:[ { x1 :   0, x2 :  55, y1 :   0, y2 : 600, target : 'dining_room' } ] } },
+		'ellys_room' : {'': {image:'ellys_room', spots:[ { x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' } ] },
+						'DAY1': {image:'ellys_roomnails', spots:[ 
+							{ x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' },
+							{ x1 :   400, x2 :  440, y1 : 395, y2 : 440, day: 1, inventory : 'nails', accomplishment : 'NAILS'}
+							] },
+						'DAY1/NAILS': {image:'ellys_room', spots:[ { x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' } ] },
+						'DAY2,DAY3,DAY4': {image:'ellyinroom', spots:[ { x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' } ] },
+						'DAY4/KNIFE': {image:'ellyinroom', spots:[ 
+							{ x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' },
+							{ x1 : 417, x2 : 490, y1 : 175, y2 : 387, day: 1, withItem : 'knife', accomplishment : 'KNIFEDEAD', nextAccomplishment : 'KNIFEDEAD' } ] },
+						'DAY4/KNIFEDEAD': {image:'ellydeadinroom', spots:[ { x1 :  656, x2 : 740, y1 : 86, y2 : 360, target : 'dining_room' } ] }
+						},
+		'bella-simons_room' : {
+						'': {image:'bella-simons_room', spots:[ { x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' } ] }, 
+						'DAY2': {image:'bellainroom', spots:[ { x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' } ] },
+						'DAY3': {image:'bellasewing', spots:[ 
+								{ x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' },
+								{ x1 :  519, x2 : 540, y1 : 408, y2 : 441, day: 3, inventory : 'needle', accomplishment : 'NEEDLE' } 
+							] },
+						'DAY3/NEEDLE': {image:'bellasewingwithoutneedle', spots:[ 
+								{ x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' },
+							    { x1 : 504, x2 : 548, y1 : 268, y2 : 533, day: 3, withItem : 'needle', accomplishment : 'NEEDLEDEAD', nextAccomplishment : 'NEEDLEDEAD' } 
+							] },
+						'DAY3/NEEDLEDEAD': {image:'belladead', spots:[ 
+								{ x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' } ] },
+						'DAY4': {image:'bella-simons_roomwithoutneedle', spots:[ { x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' } ] }, 
+						'DAY5': {image:'bellarose', spots:[ 
+								{ x1 :  436, x2 : 497, y1 : 328, y2 : 390, day: 5, inventory : 'rose', accomplishment : 'ROSE' },
+								{ x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' }
+							] },
+						'DAY5/ROSE': {image:'bella-simons_roomwithoutneedle', spots:[ 
+								{ x1 :  10, x2 : 35, y1 : 214, y2 : 242, target : 'hallway' }
+							] }
+					},
+		'hallway' :    {'': {image:'hallway', spots: [ 
+						  { x1 : 571, x2 : 643, y1 : 124, y2 : 495, target : 'dining_room' },
+						  { x1 : 200, x2 : 280, y1 :  73, y2 : 350, target : 'bathroom' },
+						  { x1 :  93, x2 : 200, y1 : 158, y2 : 450, target : 'kitchen' },
+						  { x1 : 318, x2 : 455, y1 : 133, y2 : 244, target : 'garden' },
+						  { x1 :   1, x2 : 123, y1 : 216, y2 : 540, target : 'bella-simons_room' }
+						]},
+						'DAY5': {image:'hallway', spots: [ 
+						  { x1 : 650, x2 : 718, y1 : 214, y2 : 600, withItem : 'key', accomplishment : 'UNLOCK', nextAccomplishment : 'UNLOCKED'},
+						  { x1 : 571, x2 : 606, y1 : 124, y2 : 508, target : 'dining_room' },
+						  { x1 : 200, x2 : 280, y1 :  73, y2 : 350, target : 'bathroom' },
+						  { x1 :  93, x2 : 200, y1 : 158, y2 : 450, target : 'kitchen' },
+						  { x1 : 318, x2 : 455, y1 : 133, y2 : 244, target : 'garden' },
+						  { x1 :   1, x2 : 123, y1 : 216, y2 : 540, target : 'bella-simons_room' }
+						]},
+						'DAY5/UNLOCKED': {image:'hallway', spots: [ 
+						  { x1 : 650, x2 : 718, y1 : 214, y2 : 600, target : 'locked_room' },
+						  { x1 : 571, x2 : 606, y1 : 124, y2 : 508, target : 'dining_room' },
+						  { x1 : 200, x2 : 280, y1 :  73, y2 : 350, target : 'bathroom' },
+						  { x1 :  93, x2 : 200, y1 : 158, y2 : 450, target : 'kitchen' },
+						  { x1 : 318, x2 : 455, y1 : 133, y2 : 244, target : 'garden' },
+						  { x1 :   1, x2 : 123, y1 : 216, y2 : 540, target : 'bella-simons_room' }
+						]}
+					   },
+		'garden' : {'': {image:'garden1', spots: [ { x1 :   375, x2 :  395, y1 :   580, y2 : 597, target : 'hallway' }]},
+				    'DAY2': {image:'garden2', spots: [ 
+								{ x1 :   375, x2 :  395, y1 :   580, y2 : 597, target : 'hallway' },
+								{ x1 :   346, x2 :  425, y1 :   480, y2 : 534, day: 2, withItem : 'bucket', accomplishment : 'PUMPKIN', nextAccomplishment : 'DISK', changeDay : false }
+					         ]},
+				    'DAY2/PUMPKIN': {
+							image:'gardenpumpkin', spots: [ 
+								{ x1 :   375, x2 :  395, y1 :   580, y2 : 597, target : 'hallway' },
+								{ x1 :   340, x2 :  425, y1 : 480, y2 : 530, day: 2, inventory : 'disk', accomplishment : 'HAVEDISK' }
+							]
+						},
+				    'DAY2/DISK': {image:'gardendisk', spots: [ 
+								{ x1 : 375, x2 : 395, y1 : 580, y2 : 597, target : 'hallway' },
+								{ x1 :   340, x2 :  425, y1 : 480, y2 : 530, day: 2, inventory : 'disk', accomplishment : 'HAVEDISK' }
+							]
+						},
+				    'DAY2/HAVEDISK': {image:'garden1', spots: [ 
+								{ x1 : 375, x2 : 395, y1 : 580, y2 : 597, target : 'hallway' }
+							]
+						},
+				    'DAY5': {image:'gardencrows', spots: [ 
+								{ x1 : 375, x2 : 395, y1 : 580, y2 : 597, target : 'hallway' },
+								{ x1 :   293, x2 :  472, y1 : 172, y2 : 220, day: 5, withItem : 'rose', inventory : 'key', accomplishment : 'KEY' }
+							]
+						},		
+				    'DAY5/KEY': {image:'garden1', spots: [ 
+								{ x1 : 375, x2 : 395, y1 : 580, y2 : 597, target : 'hallway' }
+							]
+						}
+					},
+		'bathroom' : {'': {image:'bathroom', spots: [ 
+					   { x1 :   0, x2 :  20, y1 :   310, y2 : 335, target : 'hallway' },
+					   { x1 :   730, x2 :  747, y1 :   295, y2 : 316, target : 'bathroom2' },
+						] },
+					  'DAY2': {image:'bathroom', spots: [ 
+					   { x1 :   0, x2 :  20, y1 :   310, y2 : 335, target : 'hallway' },
+					   { x1 :   730, x2 :  747, y1 :   295, y2 : 316, target : 'bathroom2' },
+					   { x1 :   214, x2 :  285, y1 :   310, y2 : 430, day: 2, inventory : 'bucket' }
+						] }
+					 },
+					 
+		'bathroom2' : {'': {image:'bathroom2', spots: [ 
+					   { x1 :   0, x2 :  27, y1 :   285, y2 : 315, target : 'bathroom' }
+						] },
+					  'DAY1,DAY2': {image:'bathroom2b', spots: [ 
+					   { x1 :   0, x2 :  27, y1 :   285, y2 : 315, target : 'bathroom' }
+						] },
+					  'DAY2/HAVEDISK': {image:'bathroom2b', spots: [ 
+					   { x1 :   0, x2 :  27, y1 :   285, y2 : 315, target : 'bathroom' },
+					   { x1 : 200, x2 :  254, y1 :  254, y2 : 278, day: 2, withItem : 'disk', accomplishment : 'MUSIC', nextAccomplishment : 'DROWNED' }
+						] },
+					  'DAY2/MUSIC': {image:'bathroom2bdisk', spots: [ 
+					     { x1 :   0, x2 :  27, y1 :   285, y2 : 315, target : 'bathroom' }
+						] },
+					  'DAY2/DROWNED': {image:'bathroom3', spots: [ 
+					     { x1 :   0, x2 :  27, y1 :   285, y2 : 315, target : 'bathroom' }
+						] }
+					 },
+		'kitchen' : { '': {image:'kitchen', spots: [ { x1 :   30, x2 :  50, y1 :   270, y2 : 295, target : 'hallway' } ] },
+					  'DAY4': {image:'kitchen', spots: [ 
+						   { x1 :   30, x2 :  50, y1 :   270, y2 : 295, target : 'hallway' },
+						   { x1 :   230, x2 :  275, y1 : 318, y2 : 347, day: 4, inventory : 'knife', accomplishment : 'KNIFE'}
+						  ] 
+						}, 
+					  'DAY4/KNIFE': {image:'kitchenwithoutknife', spots: [ { x1 :   30, x2 :  50, y1 :   270, y2 : 295, target : 'hallway' } ] }
+					 },
+		'locked_room' : {'DAY5/UNLOCKED': {image:'locked_room', spots:[] }}
+	};
+    var inventory = []; //'bucket','key','needle','pills','rose','disk','nails','knife'];  // 
+	var invLookup = {'knife':{h:50,w:70,t:5}, 'nails':{h:64, w:55,t:0}, 'key':{h:65, w:55,t:0},
+					 'needle':{h:69, w:50,t:0},'pills':{h:64, w:50,t:0},
+					 'rose':{h:65, w:60,t:0},'disk':{h:63, w:65,t:0},'bucket':{h:65, w:55,t:0}
+					 };
+	var itemsInRoom = {'knife':{x:50,y:70}, 'nails':{x:250, y:250}};
+	var item1;
+	var selectedInventory = -1;
+
+	function hittest(x, y, x1, x2, y1, y2, yslope) {
+		return (x > (x1 - (y * yslope)) && x < (x2 - (y * yslope)) && y > y1 && y < y2);
+	}
+
+	$(function() {
+		$('img').on('dragstart', function(event) { event.preventDefault(); });
+		
+		var w;
+		function resize() {
+			w = Math.floor(($(window).width() - 766) / 2);
+			$('#main').css('margin-left', ''+ w + 'px');
+			$('#main').css('display','block');
+			$('#item1').css('margin-left', ''+ w + 'px');
+			$('#item2').css('margin-left', ''+ w + 'px');
+			$('#item3').css('margin-left', ''+ w + 'px');
+
+			// Inventory display
+			if (getHash() != 'start') { 
+				if (inventory.length > 0) showInventory();
+				$('#inventory').css('display', 'block');
+				$('#inventory').css('margin-left', ''+ w + 'px');
+				var left_pos = 15;
+				for (var item in inventory) {
+					$('#' + inventory[item]).css('left', (parseInt($('#inventory').css('margin-left').substr(0, $('#inventory').css('margin-left').length-2)) + left_pos) + 'px');
+					left_pos += 98;
+				}
+			}
+		}
+		function getHash() {
+			if (!window.location.hash) return 'start';
+			return window.location.hash.substr(1);
+		}
+		resize();
+		$(window).resize(resize);
+		
+		function addInventory(room) {
+			if (room.inventory !== undefined) {
+				var found = false; for (var j=0; j<inventory.length; j++) if (inventory[j] == room.inventory) { found = true; break; }
+				if (!found) {
+					inventory.push(room.inventory);
+					if (room.accomplishment) { accomplishment[room.accomplishment] = ''; openRoom(); }
+				}
+				showInventory();
+			}	
+		}
+		
+		// CLICK IN ROOM
+		$('#main').on('click', function(e) { 
+		  if (gameover) { $('#main').attr('src', 'images/endscreen4.jpg'); } else {
+			var yslope = getHash() == 'hallway' ? 0.077 : 0;
+			var room = rooms[getHash()];
+			if (room) {
+				var possibleRooms = roomsByDay(room);
+				var currentRoom = possibleRooms[0];
+				if (possibleRooms.length > 1) currentRoom = roomsBestMatch(possibleRooms);
+
+				room = room[currentRoom].spots; 
+				var top = e.offsetY;
+				var left = e.offsetX;
+
+				for (var i=0; i < room.length; i++) {
+
+					// Hint
+					if (room[i].hint !== undefined && hittest(left, top, room[i].x1, room[i].x2, room[i].y1, room[i].y2, yslope)) {
+						setTimeout(function() { 
+							$('#main').attr('src', 'images/nathansleepingcabinet2.jpg'); 
+							setTimeout(function() { window.location = '#cabinet_one'; }, 300);
+						}, 300);
+						return;
+					}
+					
+					// If finding inventory
+					if (room[i].day && room[i].day > 0) {	// Day == 2
+						if (hittest(left, top, room[i].x1, room[i].x2, room[i].y1, room[i].y2, yslope)) {
+							if (room[i].withItem === undefined) addInventory(room[i]);
+							resize();
+						}
+					}
+
+					// If using inventory
+					if (room[i].withItem) {
+						if (selectedInventory >= 0 && inventory[selectedInventory] == room[i].withItem) {
+							if (hittest(left, top, room[i].x1, room[i].x2, room[i].y1, room[i].y2, yslope)) {
+								accomplishment[room[i].accomplishment] = '';
+								var id = inventory[selectedInventory];
+								$('#'+id).remove();
+								if (selectedInventory > -1) inventory.splice(selectedInventory, 1);
+								selectedInventory = -1;
+								$("#inventory").attr('src','images/inventory.png');
+								if (room[i].inventory !== undefined) addInventory(room[i]);
+								openRoom();
+								resize();
+								var a = room[i].accomplishment;
+								var n = room[i].nextAccomplishment;
+								if (room[i].nextAccomplishment) { 
+									var changeDay = (room[i].changeDay === undefined);
+									if (room[i].nextAccomplishment == 'UNLOCKED') window.location = '#locked_room';
+									setTimeout(function() {
+										delete accomplishment[a];
+										accomplishment[n] = ''; 
+										openRoom();
+										if (changeDay) day++;
+									}, 2000);
+								}
+							}
+							//window.location = '#' + getHash(); 
+						}
+					} else { 
+						//if (room[i].accomplishment !== undefined && room[i].attending !== undefined) {
+						//	accomplishment[room[i].accomplishment] = '';
+						//	resize();
+						//}
+					}
+
+					// If going to a new room
+					if (room[i].target && hittest(left, top, room[i].x1, room[i].x2, room[i].y1, room[i].y2, yslope)) {
+						window.location = '#' + room[i].target; 
+					}					
+				}
+			}
+		  }
+		});
+		$('body').on('click', '.inventory', function(e) { 
+			var index = -1;
+			var edges = [80, 185, 285, 380, 480, 580, 675, 10000];
+			var found = false;
+			for (var i=0; i< inventory.length; i++) {
+				if (e.currentTarget.id == inventory[i]) {
+					found = true;
+					index = i;
+					$("#inventory").attr('src','images/inventory' + (i+1) + '.png');
+					break;
+				}
+			}
+			if (!found) {
+				for (var i=0; i<edges.length; i++) {
+					if (e.offsetX < edges[i]) {
+						index = i;
+						$("#inventory").attr('src','images/inventory' + (i+1) + '.png');
+						break;
+					}
+				}
+			}
+			if (index == selectedInventory) {
+				selectedInventory = -1;
+				$("#inventory").attr('src','images/inventory.png');
+			} else selectedInventory = index;
+			
+		});
+		
+		openRoom();
+
+		function roomsByDay(room) {
+			var keys = Object.keys(room);
+			var results = [];
+			for (var k=0; k<keys.length; k++) {
+				var key = keys[k]; // '','DAY2','DAY2/PUMPKIN','DAY2,DAY3/PUMPKIN,BUCKET'
+				if (key.indexOf('DAY' + day)>=0) results.push(key);
+			}
+			if (results.length ==0) results.push('');	// If nothing found, use default
+			return results;
+		}
+		function roomsBestMatch(possibleRooms) {
+			var bestKey = possibleRooms[0];
+			var maxAccomp = 0;
+			for (var r=0; r<possibleRooms.length; r++) {
+				var poss = possibleRooms[r];
+				if (poss.indexOf('/')>0) {
+					var accompList = poss.split('/')[1];
+					var accomps = accompList.split(',');
+					var aCount = 0;
+					for (var a=0; a<accomps.length; a++) {
+						if (accomplishment[accomps[a]] != undefined) aCount++;
+					}
+					if (aCount > maxAccomp) bestKey = poss;
+				} else {
+					if (maxAccomp == 0) bestKey = poss;
+				}
+			}
+			return bestKey;
+		}
+		
+		function endscreen1() { $('#main').attr('src', 'images/endscreen1.jpg'); setTimeout(endscreen2, 500);}
+		function endscreen2() { $('#main').attr('src', 'images/endscreen2.jpg'); setTimeout(endscreen1, 500);}
+
+		// GO TO ROOM
+		function openRoom() {
+			if (getHash() == 'locked_room') {
+				gameover = true;
+				$('#inventory').css('position','fixed');
+				$('#inventory').css('left','-2000px');
+				$('.inventory').css('display','none');
+				$('.inventory').css('top','-3000px');
+				setTimeout(function() { 
+					$('#main').attr('src', 'images/seq1.jpg'); 
+					setTimeout(function() { $('#main').attr('src', 'images/seq2.jpg'); 
+							setTimeout(function() { $('#main').attr('src', 'images/seq3.jpg'); 
+								setTimeout(function() { $('#main').attr('src', 'images/seq4.jpg'); 
+									setTimeout(function() { $('#main').attr('src', 'images/seq5.jpg'); 
+										setTimeout(function() { $('#main').attr('src', 'images/seq6.jpg'); 
+											setTimeout(function() { $('#main').attr('src', 'images/seq7.jpg'); 
+												setTimeout(function() { $('#main').attr('src', 'images/endscreen0.jpg'); 
+													setTimeout(endscreen1, 1000);
+												}, 1000);
+											}, 1000);
+										}, 1000);
+									}, 1000);
+								}, 1000);
+						}, 1000);
+					}, 1000);
+				}, 10);
+			} 
+			else {
+			  var room = rooms[getHash()];
+			  if (room) {
+				var possibleRooms = roomsByDay(room);
+				var currentRoom = possibleRooms[0];
+				if (possibleRooms.length > 1) currentRoom = roomsBestMatch(possibleRooms);
+				$('#main').attr('src', 'images/' + room[currentRoom].image + '.jpg');
+			  }
+			}
+		}
+		
+		function showInventory() {
+			//var left_pos = 20;
+			for (var item in inventory) {
+				if ($('#' + inventory[item]).length == 0) {
+					var oImg = document.createElement("img");
+					oImg.setAttribute('src', 'images/' + inventory[item] + '.png' );
+					oImg.setAttribute('class', 'inventory');
+					oImg.setAttribute('ID', inventory[item]);
+					oImg.style.position = 'fixed';
+					oImg.style.top = 630 + invLookup[inventory[item]].t + 'px';
+					//oImg.style.left = '135px';
+					//oImg.style.left = $('#inventory').css('margin-left').substr(0, $('#inventory').css('margin-left').length-2) + left_pos + 'px';
+					oImg.setAttribute('height', invLookup[inventory[item]].h + 'px');
+					oImg.setAttribute('width', invLookup[inventory[item]].w + 'px');
+					document.body.appendChild(oImg);
+					//left_pos += 120;
+				}
+			}
+		}
+		
+		$(window).on('hashchange', function() { openRoom(); resize(); });
+	});
+  </script>
+
+  <!-- Analytics -->
+  <script src="//static.getclicky.com/js" type="text/javascript"></script>
+  <script type="text/javascript">try{ clicky.init(101093115); }catch(e){}</script>
+  <noscript><p><img alt="Clicky" width="1" height="1" src="//in.getclicky.com/101093115ns.gif" /></p></noscript>
+
+ </body>
+</html>
